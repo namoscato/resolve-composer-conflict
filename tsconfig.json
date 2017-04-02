@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "sourceMap": false,
+        "outDir": "bin"
+    },
+    "exclude": [
+        "bin",
+        "node_modules"
+    ]
+}
