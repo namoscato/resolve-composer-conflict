@@ -1,4 +1,4 @@
-/* tslint:disable:no-console */
+#!/usr/bin/env node
 
 import { spawn, spawnSync } from 'child_process';
 import * as colors from 'colors';
