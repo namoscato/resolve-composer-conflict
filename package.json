@@ -1,6 +1,6 @@
 {
   "name": "resolve-composer-conflict",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Utility to automatically resolve composer.lock git conflicts",
   "license": "MIT",
   "author": "Nick Amoscato <nick@amoscato.com>",
