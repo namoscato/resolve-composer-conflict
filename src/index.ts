@@ -14,7 +14,7 @@ let result;
 
 console.log(colors.yellow(`Merging ${parentBranch}`));
 
-spawnProcess('git', ['merge', parentBranch], true);
+spawnProcess('git', ['pull', 'origin', parentBranch], true);
 
 try {
     console.log(colors.yellow('Ensuring composer.lock is the sole conflict'));
@@ -60,10 +60,26 @@ try {
     result.on('close', (code) => {
         if (0 !== code) {
             abortMerge();
-            return;
         }
 
+        console.log(colors.yellow('Committing merge'));
+
+        result = spawnProcess('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+
+        const headBranch = result.stdout.toString().trim();
+
+        spawnProcess(
+            'git',
+            [
+                'commit',
+                '-am',
+                `Merge branch '${parentBranch}' into '${headBranch}'\nConflicts in: composer.lock`,
+            ],
+        );
+
         console.log(colors.green('Successfully resolved composer.lock conflict'));
+
+        process.exit();
     });
 } catch (e) {
     abortMerge();
@@ -74,7 +90,9 @@ function abortMerge() {
 
     spawnProcess('git', ['merge', '--abort']);
 
-    console.log(colors.red('Aborted merge'));
+    console.log(colors.red('Unable to automatically resolve composer.lock conflict'));
+
+    process.exit(1);
 }
 
 function spawnProcess(command: string, processArgs: string[], isGraceful: boolean = false) {
