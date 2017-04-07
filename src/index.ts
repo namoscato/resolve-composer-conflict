@@ -6,7 +6,7 @@ import * as colors from 'colors';
 const args = process.argv.slice(2);
 
 if (1 !== args.length) {
-    console.log(colors.red('Usage: resolve-composer-conflict <branch>'))
+    console.log(colors.red('Usage: resolve-composer-conflict <branch>'));
     process.exit(1);
 }
 
