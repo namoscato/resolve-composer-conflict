@@ -6,15 +6,32 @@ import * as colors from 'colors';
 const args = process.argv.slice(2);
 
 if (1 !== args.length) {
-    throw new Error('Parent branch not specified');
+    console.log(colors.red('Usage: resolve-composer-conflict <branch>'))
+    process.exit(1);
 }
 
 const parentBranch = args[0];
 let result;
 
-console.log(colors.yellow(`Merging ${parentBranch}`));
+result = spawnProcess('git', ['merge', 'HEAD'], true);
 
-spawnProcess('git', ['pull', 'origin', parentBranch], true);
+if (0 === result.status) { // If not currently in a merge
+    console.log(colors.yellow(`Merging ${parentBranch}`));
+
+    result = spawnProcess('git', ['pull', 'origin', parentBranch], true);
+
+    if (0 === result.status) {
+        console.log(colors.green(result.stdout.toString()));
+        process.exit();
+    }
+
+    result = result.stderr.toString();
+
+    if ('fatal:' === result.substr(0, 6)) {
+        console.log(colors.red(result));
+        process.exit(1);
+    }
+}
 
 try {
     console.log(colors.yellow('Ensuring composer.lock is the sole conflict'));
@@ -59,7 +76,7 @@ try {
 
     result.on('close', (code) => {
         if (0 !== code) {
-            abortMerge();
+            abortMerge('composer update failed');
         }
 
         console.log(colors.yellow('Committing merge'));
@@ -82,15 +99,15 @@ try {
         process.exit();
     });
 } catch (e) {
-    abortMerge();
+    abortMerge(e.message);
 }
 
-function abortMerge() {
+function abortMerge(message: string) {
     console.log(colors.yellow('Aborting merge'));
 
     spawnProcess('git', ['merge', '--abort']);
 
-    console.log(colors.red('Unable to automatically resolve composer.lock conflict'));
+    console.log(colors.red(`Unable to automatically resolve composer.lock conflict: ${message}`));
 
     process.exit(1);
 }
