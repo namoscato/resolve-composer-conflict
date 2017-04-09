@@ -14,6 +14,7 @@ npm i -g resolve-composer-conflict
 resolve-composer-conflict <branch>
 ```
 
-1. Merges the specified _branch_ into the current branch
-2. Resolves a sole `composer.lock` conflict
-3. Commits the merge
+1. Merges the specified _branch_ into the current branch if a merge is not already in progress
+2. Prompts manual resolution of other conflicts if applicable
+3. Resolves the `composer.lock` conflict by applying the current branch's updated dependencies to the merge branch's locked versions
+4. Commits the merge with a description of the conflicting files
