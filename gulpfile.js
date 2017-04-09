@@ -1,15 +1,15 @@
 'use strict';
 
 const gulp = require('gulp');
-const gulpTslint = require('gulp-tslint');
-const gulpTypescript = require('gulp-typescript');
+const tslint = require('gulp-tslint');
+const typescript = require('gulp-typescript');
 
 const js = {
     src: 'src/**/*.ts',
     dest: 'bin',
 };
 
-const tsProject = gulpTypescript.createProject('tsconfig.json');
+const tsProject = typescript.createProject('tsconfig.json');
 
 function jsApp() {
     return tsProject.src()
@@ -18,19 +18,19 @@ function jsApp() {
 }
 
 function jsLint() {
-    return tsProject.src()
-        .pipe(gulpTslint({
-            formatter: "verbose"
-        }))
-        .pipe(gulpTslint.report());
+    return gulp.src(js.src)
+        .pipe(tslint())
+        .pipe(tslint.report({ emitError: false }));
 }
 
-const all = gulp.parallel(jsApp, jsLint);
+const all = gulp.series(jsLint, jsApp);
 
 function watch() {
     gulp.watch(js.src, all);
 }
 
 exports.all = all;
-exports.default = gulp.parallel(all, watch);
+exports.default = gulp.series(all, watch);
+exports.jsApp = jsApp;
+exports.jsLint = jsLint;
 exports.watch = watch;

@@ -2,8 +2,10 @@
 
 import { spawn, spawnSync } from 'child_process';
 import * as colors from 'colors';
+import * as readlineSync from 'readline-sync';
 
 const args = process.argv.slice(2);
+const tab = '    ';
 
 if (1 !== args.length) {
     console.log(colors.red('Usage: resolve-composer-conflict <branch>'));
@@ -18,7 +20,7 @@ result = spawnProcess('git', ['merge', 'HEAD'], true);
 if (0 === result.status) { // If not currently in a merge
     console.log(colors.yellow(`Merging ${parentBranch}`));
 
-    result = spawnProcess('git', ['pull', 'origin', parentBranch], true);
+    result = spawnProcess('git', ['pull', 'origin', parentBranch, '--quiet'], true);
 
     if (0 === result.status) {
         console.log(colors.green(result.stdout.toString()));
@@ -27,22 +29,50 @@ if (0 === result.status) { // If not currently in a merge
 
     result = result.stderr.toString();
 
-    if ('fatal:' === result.substr(0, 6)) {
+    if (result.trim().length > 0) {
         console.log(colors.red(result));
         process.exit(1);
     }
 }
 
 try {
-    console.log(colors.yellow('Ensuring composer.lock is the sole conflict'));
+    console.log(colors.yellow('Checking if composer.lock is the only conflict'));
 
-    result = spawnProcess('git', ['diff', '--name-only', '--diff-filter=U']);
+    let allConflictedFiles: string[] = null;
+    let conflictedFiles: string[] = [];
+    let hasConflicts = false;
 
-    const conflictedFiles = result.stdout.toString().trim().split('\n');
+    do {
+        if (hasConflicts) {
+            let output = 'composer.lock is not the only conflict\n\n';
 
-    if (1 !== conflictedFiles.length || 'composer.lock' !== conflictedFiles[0]) {
-        throw new Error(`composer.lock is not the sole conflict (${conflictedFiles.length} conflicts)`);
-    }
+            output += 'Manually resolve the conflicting files:\n';
+
+            conflictedFiles.forEach((file) => {
+                if ('composer.lock' === file) {
+                    return;
+                }
+
+                output += `${tab}${file}\n`;
+            });
+
+            console.log(colors.red(output));
+
+            if (!readlineSync.keyInYNStrict('Try again?')) {
+                throw new Error(`${conflictedFiles.length - 1} other conflicting files`);
+            }
+        }
+
+        result = spawnProcess('git', ['diff', '--name-only', '--diff-filter=U']);
+
+        conflictedFiles = result.stdout.toString().trim().split('\n');
+
+        if (null === allConflictedFiles) {
+            allConflictedFiles = conflictedFiles;
+        }
+
+        hasConflicts = 1 !== conflictedFiles.length || 'composer.lock' !== conflictedFiles[0];
+    } while (hasConflicts);
 
     console.log(colors.yellow(`Checking out ${parentBranch} composer.lock`));
 
@@ -70,9 +100,9 @@ try {
 
     result = spawn('composer', dependencies);
 
-    result.stdout.on('data', (data) => process.stdout.write(data.toString()));
+    result.stdout.on('data', (data) => process.stdout.write(colors.yellow(data.toString())));
 
-    result.stderr.on('data', (data) => process.stderr.write(data.toString()));
+    result.stderr.on('data', (data) => process.stderr.write(colors.yellow(data.toString())));
 
     result.on('close', (code) => {
         if (0 !== code) {
@@ -84,13 +114,15 @@ try {
         result = spawnProcess('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
 
         const headBranch = result.stdout.toString().trim();
+        const commitMessage = `Merge branch '${parentBranch}' into '${headBranch}'\n` +
+            `Conflicts in:\n${tab}${allConflictedFiles.join(`\n${tab}`)}`;
 
         spawnProcess(
             'git',
             [
                 'commit',
                 '-am',
-                `Merge branch '${parentBranch}' into '${headBranch}'\nConflicts in: composer.lock`,
+                commitMessage,
             ],
         );
 
