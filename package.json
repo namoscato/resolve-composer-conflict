@@ -1,6 +1,6 @@
 {
   "name": "resolve-composer-conflict",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Utility to automatically resolve composer.lock git conflicts",
   "license": "MIT",
   "author": "Nick Amoscato <nick@amoscato.com>",
@@ -12,10 +12,8 @@
     "url": "https://github.com/namoscato/resolve-composer-conflict"
   },
   "scripts": {
-    "build": "tsc",
-    "lint": "tslint src/**/*.ts",
-    "prepublishOnly": "npm run lint && npm run build",
-    "start": "tsc -w"
+    "prepublishOnly": "gulp all",
+    "start": "gulp"
   },
   "dependencies": {
     "colors": "^1.1.2"
@@ -23,6 +21,9 @@
   "devDependencies": {
     "@types/colors": "^1.1.2",
     "@types/node": "^7.0.12",
+    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp-tslint": "^7.1.0",
+    "gulp-typescript": "^3.1.6",
     "tslint": "^5.0.0",
     "typescript": "^2.2.2"
   },
