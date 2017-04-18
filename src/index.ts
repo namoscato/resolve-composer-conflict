@@ -76,7 +76,7 @@ try {
 
     console.log(colors.yellow(`Checking out ${parentBranch} composer.lock`));
 
-    spawnProcess('git', ['checkout', parentBranch, '--', 'composer.lock']);
+    spawnProcess('git', ['checkout', `origin/${parentBranch}`, '--', 'composer.lock']);
 
     console.log(colors.yellow('Determining updated dependencies in HEAD'));
 
