@@ -2,7 +2,13 @@
 
 import { spawn, spawnSync } from 'child_process';
 import * as colors from 'colors';
+import * as fs from 'fs';
 import * as readlineSync from 'readline-sync';
+
+enum ComposerAction {
+    update = 'update',
+    remove = 'remove',
+}
 
 const args = process.argv.slice(2);
 const tab = '    ';
@@ -13,7 +19,7 @@ if (1 !== args.length) {
 }
 
 const parentBranch = args[0];
-let result;
+let result: any;
 
 result = spawnProcess('git', ['merge', 'HEAD'], true);
 
@@ -78,23 +84,79 @@ try {
 
     spawnProcess('git', ['checkout', `origin/${parentBranch}`, '--', 'composer.lock']);
 
+    console.log(colors.yellow(`Saving current composer.json state`));
+
+    const composerJson = fs.readFileSync('composer.json');
+
+    result = JSON.parse(composerJson.toString());
+
+    const dependencies = Object.assign(result.require, result['require-dev']);
+
+    console.log(colors.yellow(`Checking out ${parentBranch} composer.json`));
+
+    spawnProcess('git', ['checkout', `origin/${parentBranch}`, '--', 'composer.json']);
+
+    result = JSON.parse(fs.readFileSync('composer.json', { encoding: 'utf8' }));
+
+    const parentDependencies = Object.assign(result.require, result['require-dev']);
+
+    console.log(colors.yellow(`Restoring previous composer.json state`));
+
+    fs.writeFileSync('composer.json', composerJson);
+
+    console.log(colors.yellow('Adding composer.json to git'));
+
+    spawnProcess('git', ['add', 'composer.json']);
+
     console.log(colors.yellow('Determining updated dependencies in HEAD'));
 
-    result = spawnProcess('git', ['diff', 'MERGE_HEAD...HEAD', '--unified=0', '--', 'composer.json']);
+    const dependenciesRemove: string[] = [];
+    const dependenciesUpdate: string[] = [];
 
-    const dependencies: string[] = [];
-
-    result.stdout.toString().split('\n').forEach((line) => {
-        const matches = line.match(/^-\s+\"([^"]+)\"/);
-
-        if (null === matches) {
-            return;
+    for (const dependency in parentDependencies) {
+        if (!parentDependencies.hasOwnProperty(dependency)) {
+            continue;
         }
 
-        dependencies.push(matches[1]);
-    });
+        if ('undefined' === typeof dependencies[dependency]) { // parent dependency no longer exists
+            dependenciesRemove.push(dependency);
+        } else if (parentDependencies[dependency] !== parentDependencies[dependency]) { // parent dependency was updated
+            dependenciesUpdate.push(dependency);
+        }
 
-    updateDependencies(dependencies, allConflictedFiles);
+        delete dependencies[dependency];
+    }
+
+    for (const dependency in dependencies) { // find any new dependencies
+        if (dependencies.hasOwnProperty(dependency)) {
+            dependenciesUpdate.push(dependency);
+        }
+    }
+
+    updateDependencies(ComposerAction.update, 'Updating', dependenciesUpdate)
+        .then(() => updateDependencies(ComposerAction.remove, 'Removing', dependenciesRemove))
+        .then(() => {
+            console.log(colors.yellow('Committing merge'));
+
+            result = spawnProcess('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+
+            const headBranch = result.stdout.toString().trim();
+            const commitMessage = `Merge branch '${parentBranch}' into '${headBranch}'\n` +
+                `Conflicts in:\n${tab}${allConflictedFiles.join(`\n${tab}`)}`;
+
+            spawnProcess(
+                'git',
+                [
+                    'commit',
+                    '-am',
+                    commitMessage,
+                ],
+            );
+
+            console.log(colors.green('Successfully resolved composer.lock conflict'));
+
+            process.exit();
+        });
 } catch (e) {
     abortMerge(e.message);
 }
@@ -123,53 +185,45 @@ function spawnProcess(command: string, processArgs: string[], isGraceful: boolea
     return processResult;
 }
 
-function updateDependencies(dependencies: string[], allConflictedFiles: string[], isSubsequentAttempt = false) {
-    console.log(colors.yellow(`Updating ${dependencies.length} Composer dependencies: ${dependencies.join(' ')}`));
+function updateDependencies(
+    action: ComposerAction,
+    gerund: string,
+    dependencies: string[],
+    isSubsequentAttempt = false,
+): Promise<void> {
+    if (0 === dependencies.length) {
+        return Promise.resolve();
+    }
 
-    result = spawn('composer', ['update'].concat(dependencies));
+    return new Promise((resolve) => {
+        console.log(colors.yellow(`${gerund} ${dependencies.length} Composer dependencies: ${dependencies.join(' ')}`));
 
-    result.stdout.on('data', (data) => process.stdout.write(colors.yellow(data.toString())));
+        result = spawn('composer', [].concat(action, dependencies));
 
-    result.stderr.on('data', (data) => process.stderr.write(colors.yellow(data.toString())));
+        result.stdout.on('data', (data: Buffer) => process.stdout.write(colors.yellow(data.toString())));
 
-    result.on('close', (code) => {
-        if (0 !== code) {
+        result.stderr.on('data', (data: Buffer) => process.stderr.write(colors.yellow(data.toString())));
+
+        result.on('close', (code: number) => {
+            if (0 === code) {
+                return resolve();
+            }
+
             if (!isSubsequentAttempt) {
-                console.log(colors.red('Failed to automatically update Composer dependencies\n'));
-                console.log(`The following ${dependencies.length} dependencies that changed in your branch were unable to be updated:`); // tslint:disable:max-line-length
+                console.log(colors.red(`Failed to automatically ${action} Composer dependencies\n`));
+                console.log(`The following ${dependencies.length} dependencies that changed in your branch were unable to be ${action}d:`); // tslint:disable:max-line-length
                 console.log(`  - ${dependencies.join('\n  - ')}\n`);
             }
 
-            console.log('Try manually running composer update again, or press enter to abort:');
+            console.log(`Try manually running composer ${action} again, or press enter to abort:`);
 
-            const input = readlineSync.question('> composer update ', { history: true });
+            const input = readlineSync.question(`> composer ${action} `, { history: true });
 
             if (0 === input.length) {
-                abortMerge('composer update failed');
+                abortMerge(`composer ${action} failed`);
             }
 
-            return updateDependencies(input.split(' '), allConflictedFiles, true);
-        }
-
-        console.log(colors.yellow('Committing merge'));
-
-        result = spawnProcess('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
-
-        const headBranch = result.stdout.toString().trim();
-        const commitMessage = `Merge branch '${parentBranch}' into '${headBranch}'\n` +
-            `Conflicts in:\n${tab}${allConflictedFiles.join(`\n${tab}`)}`;
-
-        spawnProcess(
-            'git',
-            [
-                'commit',
-                '-am',
-                commitMessage,
-            ],
-        );
-
-        console.log(colors.green('Successfully resolved composer.lock conflict'));
-
-        process.exit();
+            return updateDependencies(action, gerund, input.split(' '), true);
+        });
     });
 }

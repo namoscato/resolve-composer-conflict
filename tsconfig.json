@@ -2,8 +2,12 @@
     "compilerOptions": {
         "noImplicitAny": true,
         "outDir": "bin",
-        "sourceMap": false
+        "sourceMap": false,
+        "lib": [
+            "es2015"
+        ]
     },
+    "compileOnSave": false,
     "exclude": [
         "bin",
         "node_modules"
