@@ -120,7 +120,7 @@ try {
 
         if ('undefined' === typeof dependencies[dependency]) { // parent dependency no longer exists
             dependenciesRemove.push(dependency);
-        } else if (parentDependencies[dependency] !== parentDependencies[dependency]) { // parent dependency was updated
+        } else if (parentDependencies[dependency] !== dependencies[dependency]) { // parent dependency was updated
             dependenciesUpdate.push(dependency);
         }
 
