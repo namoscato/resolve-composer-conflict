@@ -223,7 +223,7 @@ function updateDependencies(
                 abortMerge(`composer ${action} failed`);
             }
 
-            return updateDependencies(action, gerund, input.split(' '), true);
+            return updateDependencies(action, gerund, input.split(' '), true).then(resolve);
         });
     });
 }
