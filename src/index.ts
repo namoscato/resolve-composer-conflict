@@ -196,9 +196,15 @@ function updateDependencies(
     }
 
     return new Promise((resolve) => {
+        const composerArgs = [].concat(action, dependencies);
+
+        if (ComposerAction.update === action) {
+            composerArgs.push('--prefer-dist');
+        }
+
         console.log(colors.yellow(`${gerund} ${dependencies.length} Composer dependencies: ${dependencies.join(' ')}`));
 
-        result = spawn('composer', [].concat(action, dependencies));
+        result = spawn('composer', composerArgs);
 
         result.stdout.on('data', (data: Buffer) => process.stdout.write(colors.yellow(data.toString())));
 
