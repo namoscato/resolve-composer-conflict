@@ -23,11 +23,14 @@ function jsLint() {
         .pipe(tslint.report({ emitError: false }));
 }
 
+const all = jsApp;
+
 function watch() {
-    gulp.watch(js.src, jsApp);
+    gulp.watch(js.src, all);
 }
 
-exports.default = gulp.series(jsApp, watch);
+exports.all = all;
+exports.default = gulp.series(all, watch);
 exports.jsApp = jsApp;
 exports.jsLint = jsLint;
 exports.watch = watch;
