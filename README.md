@@ -1,4 +1,4 @@
-# Resolve Composer Conflict
+# Resolve Composer Conflict [![Actions Status](https://github.com/namoscato/resolve-composer-conflict/workflows/Node%20CI/badge.svg)](https://github.com/namoscato/resolve-composer-conflict/actions)
 
 Utility to automatically resolve [`composer.lock`](https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies) git conflicts.
 

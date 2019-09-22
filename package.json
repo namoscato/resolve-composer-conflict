@@ -13,7 +13,8 @@
   },
   "scripts": {
     "prepare": "gulp all",
-    "start": "gulp"
+    "start": "gulp",
+    "test": "gulp jsLint"
   },
   "dependencies": {
     "colors": "^1.1.2",
