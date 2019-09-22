@@ -25,7 +25,7 @@
     "@types/readline-sync": "^1.4.1",
     "gulp": "^4.0.2",
     "gulp-tslint": "^8.0.0",
-    "gulp-typescript": "^3.1.6",
+    "gulp-typescript": "^5.0.1",
     "tslint": "^5.0.0",
     "typescript": "^2.2.2"
   },
