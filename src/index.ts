@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawn, spawnSync } from 'child_process';
+import { spawn, spawnSync, SpawnSyncReturns } from 'child_process';
 import * as colors from 'colors';
 import * as fs from 'fs';
 import * as readlineSync from 'readline-sync';
@@ -19,7 +19,7 @@ if (1 !== args.length) {
 }
 
 const parentBranch = args[0];
-let result: any;
+let result: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 result = spawnProcess('git', ['merge', 'HEAD'], true);
 
@@ -113,24 +113,18 @@ try {
     const dependenciesRemove: string[] = [];
     const dependenciesUpdate: string[] = [];
 
-    for (const dependency in parentDependencies) {
-        if (!parentDependencies.hasOwnProperty(dependency)) {
-            continue;
-        }
-
+    for (const [dependency, parentVersion] of Object.entries(parentDependencies)) {
         if ('undefined' === typeof dependencies[dependency]) { // parent dependency no longer exists
             dependenciesRemove.push(dependency);
-        } else if (parentDependencies[dependency] !== dependencies[dependency]) { // parent dependency was updated
+        } else if (parentVersion !== dependencies[dependency]) { // parent dependency was updated
             dependenciesUpdate.push(dependency);
         }
 
         delete dependencies[dependency];
     }
 
-    for (const dependency in dependencies) { // find any new dependencies
-        if (dependencies.hasOwnProperty(dependency)) {
-            dependenciesUpdate.push(dependency);
-        }
+    for (const dependency of Object.keys(dependencies)) { // find any new dependencies
+        dependenciesUpdate.push(dependency);
     }
 
     updateDependencies(ComposerAction.update, 'Updating', dependenciesUpdate)
@@ -161,7 +155,7 @@ try {
     abortMerge(e.message);
 }
 
-function abortMerge(message: string) {
+function abortMerge(message: string): void {
     console.log(colors.yellow('Aborting merge'));
 
     spawnProcess('git', ['merge', '--abort']);
@@ -171,7 +165,7 @@ function abortMerge(message: string) {
     process.exit(1);
 }
 
-function spawnProcess(command: string, processArgs: string[], isGraceful: boolean = false) {
+function spawnProcess(command: string, processArgs: string[], isGraceful = false): SpawnSyncReturns<string> {
     const processResult = spawnSync(command, processArgs);
 
     if (!isGraceful && 0 !== processResult.status) {

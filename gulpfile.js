@@ -1,7 +1,7 @@
 'use strict';
 
 const gulp = require('gulp');
-const tslint = require('gulp-tslint');
+const eslint = require('gulp-eslint');
 const typescript = require('gulp-typescript');
 
 const js = {
@@ -19,8 +19,9 @@ function jsApp() {
 
 function jsLint() {
     return gulp.src(js.src)
-        .pipe(tslint())
-        .pipe(tslint.report({ emitError: false }));
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
 }
 
 const all = jsApp;
