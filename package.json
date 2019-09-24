@@ -21,7 +21,7 @@
     "readline-sync": "^1.4.7"
   },
   "devDependencies": {
-    "@types/node": "^8.0.34",
+    "@types/node": "^10.14.18",
     "@types/readline-sync": "^1.4.1",
     "@typescript-eslint/eslint-plugin": "^2.3.0",
     "@typescript-eslint/parser": "^2.3.0",
