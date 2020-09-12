@@ -1,4 +1,6 @@
-# Resolve Composer Conflict [![Actions Status](https://github.com/namoscato/resolve-composer-conflict/workflows/Node%20CI/badge.svg)](https://github.com/namoscato/resolve-composer-conflict/actions)
+[![Actions Status](https://github.com/namoscato/resolve-composer-conflict/workflows/ci/badge.svg)](https://github.com/namoscato/resolve-composer-conflict/actions) [![npm version](https://badge.fury.io/js/resolve-composer-conflict.svg)](https://badge.fury.io/js/resolve-composer-conflict)
+
+# Resolve Composer Conflict
 
 Utility to automatically resolve [`composer.lock`](https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies) git conflicts.
 
