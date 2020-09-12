@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/namoscato/resolve-composer-conflict/workflows/ci/badge.svg)](https://github.com/namoscato/resolve-composer-conflict/actions) [![npm version](https://badge.fury.io/js/resolve-composer-conflict.svg)](https://badge.fury.io/js/resolve-composer-conflict)
+[![Actions Status](https://github.com/namoscato/resolve-composer-conflict/workflows/ci/badge.svg)](https://github.com/namoscato/resolve-composer-conflict/actions) [![npm version](https://badge.fury.io/js/resolve-composer-conflict.svg)](https://www.npmjs.com/package/resolve-composer-conflict)
 
 # Resolve Composer Conflict
 
